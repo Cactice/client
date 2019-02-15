@@ -20,33 +20,6 @@ const Index = () => {
         <NoSSR onSSR={<Loading/>}>
           <Scene/>
         </NoSSR>
-        <div className='overlaps'>
-          <Parallax
-            className="custom-class"
-            offsetYMax={30}
-            offsetYMin={-30}
-            tag="figure"
-            styleInner={{
-              paddingTop:'10vh',
-              paddingLeft:'15vw'
-            }}
-          >
-            <div className='motto_div'>
-              <p className='motto_en'>
-                CODE IS&nbsp;
-                <span style={{color:'red'}}>
-                  LOVE　
-                </span>
-              </p>
-              <p className='motto'>
-                コードに
-                <span style={{color:'red'}}>
-                  恋
-                </span>
-              </p>
-            </div>
-          </Parallax>
-        </div>
           <Parallax
             className="custom-class"
             offsetYMax={30}

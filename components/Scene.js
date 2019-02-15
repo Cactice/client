@@ -1,5 +1,7 @@
 import React from 'react'
-import {Scene, TextureLoader, Mesh, PerspectiveCamera, Color, JSONLoader, ShaderMaterial, AmbientLight } from 'three'
+import * as THREE from 'three'
+import * as controls from 'three-orbit-controls';
+const OrbitControls = controls(THREE)
 //import {TextureLoader} from './threejs/src/loaders/TextureLoader.js'
 //import {Mesh} from './threejs/src/objects/Mesh'
 //import {PerspectiveCamera} from './threejs/src/cameras/PerspectiveCamera.js'
@@ -32,15 +34,16 @@ import Hls from "hls.js";
  *     (https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext)
  */
 export default class Scene2 extends React.Component {
+
   constructor(props, context) {
     super(props, context)
     this.state = {
       rotationDirection: +1,   // shows which direction cube spins
     }
     this.start = Date.now()
-    this.scene = new Scene()
+    this.scene = new THREE.Scene()
 
-    var loader = new TextureLoader()
+    var loader = new THREE.TextureLoader()
     loader.load('/static/threejs/UVface2.webp', (tex)=> {
       this.uniforms = {
         texture1: { type: 't', value: tex},
@@ -49,19 +52,20 @@ export default class Scene2 extends React.Component {
           value: 0.0,
         },
       }
-      this.material = new ShaderMaterial({
+      this.material = new THREE.ShaderMaterial({
         uniforms      : this.uniforms,
         vertexShader  : vertShader,
         fragmentShader: fragShader,
       })
 
-      let loader = new JSONLoader()
+      let loader = new THREE.JSONLoader()
       loader.load( '/static/threejs/me4.json', ( geometry, materials ) => {
-        let json = new Mesh( geometry, this.material)
+        let json = new THREE.Mesh( geometry, this.material)
         json.position.set( 0,1,-1)
         json.scale.set( 1, 1, 1 )
       } )
     })
+    this.video = React.createRef();
   }
 
 
@@ -73,22 +77,20 @@ export default class Scene2 extends React.Component {
   }
 
   initScene = (renderer, gl) => {
-
-    const ambientLight = new AmbientLight('#ffffff', 0.5)
+    const ambientLight = new THREE.AmbientLight('#ffffff', 0.5)
     this.scene.add(ambientLight)
 
-    this.scene.background = new Color( 0xf0f0f0 )
+    this.scene.background = new THREE.Color( 0xf0f0f0 )
 
-    this.camera            = new PerspectiveCamera(75, 16 / 9, 0.1, 1000)
+    this.camera            = new THREE.PerspectiveCamera(75, 16 / 9, 0.1, 1000)
+    this.controls = new OrbitControls(this.camera,renderer.domElement);
     this.camera.position.z = 4
 
     renderer.setClearColor('#0d0d1e')
   }
 
   renderScene = (renderer, gl) => {
-    if(typeof this.material !== 'undefined'){
-      this.material.uniforms[ 'time' ].value = .00025 * ( Date.now() - this.start )
-    }
+    this.controls.update()
     renderer.render(this.scene, this.camera)
   }
 
@@ -100,8 +102,20 @@ export default class Scene2 extends React.Component {
   }
 
   componentDidMount(){
-    video = document.getElementById( 'video' );
-    var texture = new THREE.VideoTexture( video );
+    let video = this.video.current
+    let hls = new Hls();
+    hls.loadSource('http://www.streambox.fr/playlists/test_001/stream.m3u8');
+    hls.attachMedia(video);
+    hls.on(Hls.Events.MANIFEST_PARSED,function() {
+      video.play();
+  });
+
+    this.texture = new THREE.VideoTexture( video );
+    this.material = new THREE.MeshBasicMaterial( { map: this.texture } );
+    this.geometry = new THREE.PlaneBufferGeometry( 16, 9 );
+    this.mesh = new THREE.Mesh( this.geometry, this.material );
+    this.mesh.position.set(0,5,-10)
+    this.scene.add(this.mesh)
   }
 
   render = () => {
@@ -110,6 +124,7 @@ export default class Scene2 extends React.Component {
         <div className='row'>
           <div className='col-12'>
             <div className="row" >
+              <video ref={this.video}></video>
               <Renderer
                 onResize    = {this.onResize}
                 initScene   = {this.initScene}
@@ -127,10 +142,14 @@ export default class Scene2 extends React.Component {
           .row {
             height: 100vh;
           }
-
         `}</style>
       </div>
     )
   }
+
+
+  
 }
+
+
 
