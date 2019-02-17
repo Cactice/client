@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 
-import  {WebGLRenderer} from './threejs/src/renderers/WebGLRenderer.js'
+import  {WebGLRenderer} from 'three'
 import ReactResizeDetector from 'react-resize-detector'
 
 
