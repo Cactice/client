@@ -103,12 +103,9 @@ export default class Scene2 extends React.Component {
 
   componentDidMount(){
     let video = this.video.current
+    video.src = 'https://res.cloudinary.com/cactice/video/upload/v1550364356/dog/c/1.mov'
     let hls = new Hls();
-    hls.loadSource('http://www.streambox.fr/playlists/test_001/stream.m3u8');
-    hls.attachMedia(video);
-    hls.on(Hls.Events.MANIFEST_PARSED,function() {
       video.play();
-  });
 
     this.texture = new THREE.VideoTexture( video );
     this.material = new THREE.MeshBasicMaterial( { map: this.texture } );
