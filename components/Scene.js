@@ -12,9 +12,6 @@ const OrbitControls = controls(THREE)
 //import {Scene} from './threejs/src/scenes/Scene.js'
 import Renderer from './Renderer'
 //
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import faForward from '@fortawesome/fontawesome-free-solid/faForward'
-import faBackward from '@fortawesome/fontawesome-free-solid/faBackward'
 
 import {vertShader} from './threejs/vertShader.js'
 import {fragShader} from './threejs/fragShader.js'
