@@ -36,12 +36,17 @@ export default class Scene extends React.Component {
     this.state = {
       rotationDirection: +1,   // shows which direction cube spins
     }
+    this.cameraNames = ['a','b','c']
     this.start = Date.now()
     this.scene = new THREE.Scene()
-    this.videoA = React.createRef();
-    this.videoB = React.createRef();
-    this.counter = 0
-
+    this.videoA = []
+    this.videoB = []
+    this.counter = []
+    for(let i=0; i<3; i++){
+      this.videoA[i] = React.createRef();
+      this.videoB[i] = React.createRef();
+      this.counter[i] = 0
+    }
   }
 
 
@@ -54,32 +59,25 @@ export default class Scene extends React.Component {
 
   initScene = (renderer, gl) => {
     let anisomax = renderer.capabilities.getMaxAnisotropy();
-    this.texture = new THREE.VideoTexture( this.videoA.current );
-    this.texture2 = new THREE.VideoTexture( this.videoA.current );
-
-    this.texture.anisotropy = anisomax
-    this.texture.repeat.set(3, 1);
-    this.texture.format = THREE.RGBFormat
-    this.texture.needsUpdate = true
-    console.log(this.texture.image)
-
-    this.texture2.minFilter = THREE.NearestFilter
 
     let data = new Uint8Array(1024 * 1024 * 3);
     data.fill(100)
-    this.combinedTexture = new THREE.DataTexture(data, 1024, 1024, THREE.RGBFormat)
-    this.combinedTexture.anisotropy = anisomax;
-    this.combinedTexture.needsUpdate = true
 
-    renderer.copyTextureToTexture(new THREE.Vector2(0, 0), this.texture, this.combinedTexture)
+    this.geometry = []
+    this.mesh = []
+    this.material = []
+    this.texture = []
 
-    this.material = new THREE.MeshBasicMaterial( { map: this.combinedTexture } );
-    this.geometry = new THREE.CylinderGeometry(5*Math.PI, 5*Math.PI, 20, 32, 1, true,0, 2*Math.PI) 
-    this.geometry.scale( - 1, 1, 1 );
-    this.mesh = new THREE.Mesh( this.geometry, this.material );
-    this.mesh.position.set(0,0,0)
+    for(let i=0; i<3;i++){
+      this.texture = new THREE.VideoTexture( this.videoA[0].current );
+      this.material = new THREE.MeshBasicMaterial( { map: this.texture } );
+      this.geometry[i] = new THREE.CylinderGeometry(15, 15, 20, 32, 1, true,i*2*Math.PI/3, 2*Math.PI/3) 
+      this.geometry[i].scale( - 1, 1, 1 );
+      this.mesh[i] = new THREE.Mesh( this.geometry[i], this.material );
+      this.mesh[i].position.set(0,0,0)
+      this.scene.add(this.mesh[i])
+    }
 
-    this.scene.add(this.mesh)
     const ambientLight = new THREE.AmbientLight('#ffffff', 0.5)
     this.scene.add(ambientLight)
 
@@ -93,9 +91,6 @@ export default class Scene extends React.Component {
   }
 
   renderScene = (renderer, gl) => {
-
-    renderer.copyTextureToTexture(new THREE.Vector2(0, 0), this.texture, this.combinedTexture)
-    this.combinedTexture.needsUpdate = true
     this.controls.update()
     renderer.render(this.scene, this.camera)
   }
@@ -107,36 +102,34 @@ export default class Scene extends React.Component {
     })
   }
 
-  ended = (current,next) => {
-    this.counter ++
-    next.src = `https://res.cloudinary.com/cactice/video/upload/v1550364356/dog/c/${this.counter}.mov`
-    this.texture = new THREE.VideoTexture( current );
-    this.mesh.material.map = this.texture
-    this.mesh.material.needsUpdate = true;
+  ended = (current,next,key) => {
+    this.counter[key] ++
+    next.src = `https://res.cloudinary.com/cactice/video/upload/v1550364356/dog/c/${this.counter[key]}.mov`
+    this.texture[key] = new THREE.VideoTexture( current );
+    this.mesh[key].material.map = this.texture[key]
+    this.mesh[key].material.needsUpdate = true;
     current.play();
   }
 
-  onEndedA = () => {
-    this.ended(this.videoB.current,this.videoA.current)
+  onEndedA = (key) => {
+    this.ended(this.videoB[key].current,this.videoA[key].current,key)
   }
   
-  onEndedB = () => {
-    this.ended(this.videoA.current,this.videoB.current)
+  onEndedB = (key) => {
+    this.ended(this.videoA[key].current,this.videoB[key].current,key)
   }
 
   componentDidMount(){
-
-    let video = this.videoA.current
-    video.crossOrigin = "anonymous";
-    video.src = `https://res.cloudinary.com/cactice/video/upload/v1550364356/dog/c/${this.counter}.mov`
-
-    this.counter++
-
-    let video2 = this.videoB.current
-    video2.crossOrigin = "anonymous";
-    video2.src = `https://res.cloudinary.com/cactice/video/upload/v1550364356/dog/c/${this.counter}.mov`
-
-
+    for(let i=0; i<3; i++){
+      let video = this.videoA[i].current
+      video.crossOrigin = "anonymous";
+      video.src = `https://res.cloudinary.com/cactice/video/upload/v1550364356/dog/c/${this.counter[i]}.mov`
+      this.counter[i]++
+      let video2 = this.videoB[i].current
+      video2.crossOrigin = "anonymous";
+      video2.src = `https://res.cloudinary.com/cactice/video/upload/v1550364356/dog/c/${this.counter[i]}.mov`
+      video.play()
+    }
   }
 
   render = () => {
@@ -145,8 +138,17 @@ export default class Scene extends React.Component {
         <div className='row'>
           <div className='col-12'>
             <div className="row" >
-              <video ref={this.videoA} onEnded={this.onEndedA} style={{display: `none`}} autoPlay></video>
-              <video ref={this.videoB} onEnded={this.onEndedB} style={{display: `none`}}></video>
+              {this.cameraNames.map((name,key)=>{ 
+                let onEndedA = () => this.onEndedA(key)
+                let onEndedB = () => this.onEndedB(key)
+                return (
+                  <div key={key}>
+                    <video key={'a'+key} ref={this.videoA[key]} onEnded={onEndedA} style={{display: `none`}} muted/>
+                    <video key={'b'+key} ref={this.videoB[key]} onEnded={onEndedB} style={{display: `none`}} muted/>
+                  </div>
+                )
+              })
+              }
               <Renderer
                 onResize    = {this.onResize}
                 initScene   = {this.initScene}

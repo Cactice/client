@@ -14,6 +14,10 @@ let config = {
         test: /\.glsl$/,
         use: ["raw-loader"]
       })
+      config.module.rules.push({
+        test: /\.json$/,
+        use: ["json-loader"]
+      })
     if(dev) {
       config.devtool = 'cheap-module-source-map'
       config.output.crossOriginLoading = 'anonymous'
