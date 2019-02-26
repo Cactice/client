@@ -30,7 +30,7 @@ import Hls from "hls.js";
  * - gl: WebGLRenderingContext of the underlying canvas element
  *     (https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext)
  */
-export default class Scene extends React.Component {
+export default class Scene2 extends React.Component {
   constructor(props, context) {
     super(props, context)
     this.state = {
@@ -38,6 +38,28 @@ export default class Scene extends React.Component {
     }
     this.start = Date.now()
     this.scene = new THREE.Scene()
+    var loader = new THREE.TextureLoader()
+    loader.load('/static/threejs/UVface2.webp', (tex)=> {
+      this.uniforms = {
+        texture1: { type: 't', value: tex},
+        time    : { // float initialized to 0
+          type : 'f',
+          value: 0.0,
+        },
+      }
+      this.material = new THREE.ShaderMaterial({
+        uniforms      : this.uniforms,
+        vertexShader  : vertShader,
+        fragmentShader: fragShader,
+      })
+
+      let loader = new THREE.JSONLoader()
+      loader.load( '/static/threejs/me4.json', ( geometry, materials ) => {
+        let json = new THREE.Mesh( geometry, this.material)
+        json.position.set( 0,1,-1)
+        json.scale.set( 1, 1, 1 )
+      } )
+    })
     this.videoA = React.createRef();
     this.videoB = React.createRef();
     this.counter = 0
@@ -53,27 +75,15 @@ export default class Scene extends React.Component {
   }
 
   initScene = (renderer, gl) => {
-    let anisomax = renderer.capabilities.getMaxAnisotropy();
     this.texture = new THREE.VideoTexture( this.videoA.current );
-    this.texture2 = new THREE.VideoTexture( this.videoA.current );
-
-    this.texture.anisotropy = anisomax
     this.texture.repeat.set(3, 1);
-    this.texture.format = THREE.RGBFormat
-    this.texture.needsUpdate = true
-    console.log(this.texture.image)
-
-    this.texture2.minFilter = THREE.NearestFilter
-
+    this.texture2 = new THREE.VideoTexture( this.videoA.current );
+    this.texture2.offset.set(0.3, 0);
+    this.texture2.repeat.set(3, 1);
     let data = new Uint8Array(1024 * 1024 * 3);
-    data.fill(100)
     this.combinedTexture = new THREE.DataTexture(data, 1024, 1024, THREE.RGBFormat)
-    this.combinedTexture.anisotropy = anisomax;
-    this.combinedTexture.needsUpdate = true
-
-    renderer.copyTextureToTexture(new THREE.Vector2(0, 0), this.texture, this.combinedTexture)
-
-    this.material = new THREE.MeshBasicMaterial( { map: this.combinedTexture } );
+    //renderer.copyTextureToTexture(new THREE.Vector2(0, 0), this.combinedTexture, this.texture)
+    this.material = new THREE.MeshBasicMaterial( { map: this.texture } );
     this.geometry = new THREE.CylinderGeometry(5*Math.PI, 5*Math.PI, 20, 32, 1, true,0, 2*Math.PI) 
     this.geometry.scale( - 1, 1, 1 );
     this.mesh = new THREE.Mesh( this.geometry, this.material );
@@ -93,9 +103,6 @@ export default class Scene extends React.Component {
   }
 
   renderScene = (renderer, gl) => {
-
-    renderer.copyTextureToTexture(new THREE.Vector2(0, 0), this.texture, this.combinedTexture)
-    this.combinedTexture.needsUpdate = true
     this.controls.update()
     renderer.render(this.scene, this.camera)
   }
@@ -129,6 +136,7 @@ export default class Scene extends React.Component {
     let video = this.videoA.current
     video.crossOrigin = "anonymous";
     video.src = `https://res.cloudinary.com/cactice/video/upload/v1550364356/dog/c/${this.counter}.mov`
+    video.autoplay = 'autoplay'
 
     this.counter++
 
@@ -145,7 +153,7 @@ export default class Scene extends React.Component {
         <div className='row'>
           <div className='col-12'>
             <div className="row" >
-              <video ref={this.videoA} onEnded={this.onEndedA} style={{display: `none`}} autoPlay></video>
+              <video ref={this.videoA} onEnded={this.onEndedA} style={{display: `none`}}></video>
               <video ref={this.videoB} onEnded={this.onEndedB} style={{display: `none`}}></video>
               <Renderer
                 onResize    = {this.onResize}
