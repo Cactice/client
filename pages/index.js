@@ -16,17 +16,9 @@ const Index = () => {
   return (
     <div>
       <body style={{overflowX: 'hidden'}}>
-      <ParallaxProvider>
         <NoSSR onSSR={<Loading/>}>
           <Scene/>
         </NoSSR>
-          <Parallax
-            className="custom-class"
-            offsetYMax={30}
-            offsetYMin={-30}
-            tag="figure"
-          >
-          </Parallax>
         <style jsx>{`
           .project_view {
             width:100vw;
@@ -64,7 +56,6 @@ const Index = () => {
           }
         `}</style>
 
-      </ParallaxProvider>
     </body>
     </div>
   )
